@@ -7,10 +7,10 @@ Only supports HLS AES 128 Encryption and input of single content key.
 
 
 # build
+This build tool use Python3.6.
+If you use windows pc. You must use cygwin bash and exec option `-w`.
 ```
-git submodule init
-git submodule update
-cp ./lambci/python3.6/build/Dockerfile Dockerfile
-echo 'CMD ["/bin/bash"]' >> ./Dockerfile
-docker-compose build
+sh build.sh
 ```
+
+ref. [lambci github code](https://github.com/lambci/docker-lambda)

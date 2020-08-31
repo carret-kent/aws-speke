@@ -1,3 +1,0 @@
-[submodule "lambci"]
-	path = lambci
-	url = https://github.com/lambci/docker-lambda.git
