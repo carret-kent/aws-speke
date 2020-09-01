@@ -20,10 +20,11 @@ fi
 rm $ORIGIN/dist.zip
 
 cp -rf ./src ./dist
-docker run --rm -v "$ORIGIN/dist":/var/task lambci/lambda:build-python3.6 pip install -r requirements.txt -t .
+docker run --rm -v "$ORIGIN/dist":/var/task "lambci/lambda:build-python3.6" pip install -r requirements.txt -t .
 # docker run --rm -v "$ORIGIN/dist":/var/task lambci/lambda:build-python3.6 zip -r dist ./*
 cd dist
-zip -r dist *
+zip -r
+dist *
 cd $ORIGIN
 mv ./dist/dist.zip ./dist.zip
 

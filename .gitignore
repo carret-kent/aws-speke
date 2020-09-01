@@ -2,4 +2,5 @@
 *.pyc
 .idea
 ./dist/
-./Dockerfile
+/src/.env
+/src/__pycache__/*
