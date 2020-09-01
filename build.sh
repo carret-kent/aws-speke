@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# If you use windows pc. You must use cygwin bash and exec option `-w`.
+# If you use windows pc. You must use cygwin bash and exec option `-w`, install zip comand.
 
 # Set ORIGIN
 while getopts w OPT
@@ -19,10 +19,14 @@ fi
 # build
 rm $ORIGIN/dist.zip
 
-cp -rf ./src ./tmp
-docker run --rm -v "$ORIGIN/tmp":/var/task lambci/lambda:build-python3.6 pip install -r requirements.txt -t .
-docker run --rm -v "$ORIGIN":/var/task lambci/lambda:build-python3.6 zip -r dist ./tmp/
+cp -rf ./src ./dist
+docker run --rm -v "$ORIGIN/dist":/var/task lambci/lambda:build-python3.6 pip install -r requirements.txt -t .
+# docker run --rm -v "$ORIGIN/dist":/var/task lambci/lambda:build-python3.6 zip -r dist ./*
+cd dist
+zip -r dist *
+cd $ORIGIN
+mv ./dist/dist.zip ./dist.zip
 
-rm -rf $ORIGIN/tmp
+rm -rf $ORIGIN/dist
 
 echo "build finished."
