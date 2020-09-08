@@ -19,14 +19,16 @@ fi
 # build
 rm $ORIGIN/dist.zip
 
-cp -rf ./src ./dist
-docker run --rm -v "$ORIGIN/dist":/var/task "lambci/lambda:build-python3.6" pip install -r requirements.txt -t .
-# docker run --rm -v "$ORIGIN/dist":/var/task lambci/lambda:build-python3.6 zip -r dist ./*
+cp -rf "$ORIGIN/src" "$ORIGIN/dist"
+# delete
+rm -rf "$ORIGIN/dist/lib"
+rm -f "$ORIGIN/dist/.env"
+rm -f "$ORIGIN/dist/.env.local"
+
+docker run --rm -v "$ORIGIN/dist":/var/task "lambci/lambda:build-python3.6" pip install -r requirements.txt -t ./lib
 cd dist
-zip -r
-dist *
-cd $ORIGIN
-mv ./dist/dist.zip ./dist.zip
+zip -r dist *
+mv "$ORIGIN/dist/dist.zip" "$ORIGIN/dist.zip"
 
 rm -rf $ORIGIN/dist
 

@@ -1,72 +1,49 @@
-import hashlib
-from uuid import UUID
-import base64
+import string
+import secrets
 
-"""
-Clear Keyを生成する
-"""
+from cache import Cache
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from cryptography.hazmat.backends import default_backend
+
+
 class KeyGenerator:
-    seed = "00112233445566778899aabbccddeeff"
-
     """
-    https://docs.microsoft.com/en-us/playready/specifications/playready-key-seed
-    PlayReadyのcontent_key生成のアルゴリズムでキー生成
+    This class is responsible for symmetric key generation.
     """
-    def gen_content_key(self, key_id):
-        key_id = UUID(key_id).bytes_le
+    def __init__(self, cache: Cache):
+        self.backend = default_backend()
+        self.content_id_secret_length = 64
+        self.derived_key_iterations = 5000
+        self.derived_key_size = 16
+        self.cache = cache
 
-        seed_bytes = b""
-        for x in range(len(self.seed)):
-            if x % 2 == 1:
-                continue
-            if x + 2 > len(self.seed):
-                break
-            l = x + 2
-            seed_bytes += int(self.seed[x:l], 16).to_bytes(1, "big")
+    def derived_key(self, secret: str, kid: str) -> str:
+        """
+        Generate a key using a key derivation function (default)
+        """
+        kdf = PBKDF2HMAC(algorithm=hashes.SHA256(), length=self.derived_key_size, salt=secret.encode('utf-8'), iterations=self.derived_key_iterations, backend=self.backend)
+        return kdf.derive(kid.encode('utf-8'))
 
-        # sha a
-        # SHA of the truncatedKeySeed and the keyIdAsBytes
-        sha = hashlib.sha256()
-        sha.update(seed_bytes)
-        sha.update(key_id)
-        shaA = [c for c in sha.digest()]
+    def generate_secret(self) -> str:
+        """
+        Generate a string of random text used in generating a key for a content ID/key ID
+        """
+        chars = string.ascii_uppercase + string.ascii_lowercase + string.digits + '!"#$%&\'()*+,-./:;<=>?@[]^_`{|}~'
+        return ''.join(secrets.choice(chars) for _ in range(self.content_id_secret_length))
 
-        # sha b
-        # SHA of the truncatedKeySeed, the keyIdAsBytes, and
-        # the truncatedKeySeed again.
-        sha = hashlib.sha256()
-        sha.update(seed_bytes)
-        sha.update(key_id)
-        sha.update(seed_bytes)
-        shaB = [c for c in sha.digest()]
+    def hls_aes_128(self, content_id: str, key_id: str) -> str:
+        """
+        Return Deriver Key and Path
 
-        # sha c
-        # SHA of the truncatedKeySeed, the keyIdAsBytes,
-        # the truncatedKeySeed again, and the keyIdAsBytes again.
-        sha = hashlib.sha256()
-        sha.update(seed_bytes)
-        sha.update(key_id)
-        sha.update(seed_bytes)
-        sha.update(key_id)
-        shaC = [c for c in sha.digest()]
+        If cache exists return to cache
+        Else key generate and store cache
+        """
+        if (self.cache.exists(content_id, key_id)):
+            print('CACHE HIT')
+            return self.cache.get(content_id, key_id), self.cache.derived_url(content_id, key_id)
 
-        # contentKey生成
-        AES_KEYSIZE_128 = 16
-        content_key = b""
-        for i in range(AES_KEYSIZE_128):
-            xorA = shaA[i] ^ shaA[i + AES_KEYSIZE_128]
-            xorB = shaB[i] ^ shaB[i + AES_KEYSIZE_128]
-            xorC = shaC[i] ^ shaC[i + AES_KEYSIZE_128]
-            content_key += (xorA ^ xorB ^ xorC).to_bytes(1, byteorder='big')
-        key = base64.b16encode(content_key)
+        derived_key = self.derived_key(self.generate_secret(), key_id)
+        derived_url = self.cache.store(content_id, key_id, derived_key)
 
-        key_bytes = b""
-        key_len = len(key)
-        for x in range(key_len):
-            if x % 2 == 1:
-                continue
-            if x + 2 > key_len:
-                break
-            last = x + 2
-            key_bytes += int(key[x:last], 16).to_bytes(1, "big")
-        return key_bytes
+        return derived_key, derived_url
