@@ -19,7 +19,7 @@ Thanks so much.
 | SYSTEM_ID | Use Validation. set request body same value. |
 | DERIVED_DOMAIN_URL | Distributing from Cloud front, set the domain.<br>Distributing from S3, set the domain. |
 | KEY_STORE_BUCKET | Store s3 bucket name. |
-| KEY_STORE_BUCKET_PREFIX | s3 put object need prefix, set any prefix. |
+| KEY_STORE_BUCKET_PREFIX | s3 put object need prefix, set any prefix. Don't need, set empty string. |
 
 # build
 This build tool use Python3.6.

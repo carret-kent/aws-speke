@@ -29,7 +29,7 @@ class CacheS3(CacheDriver):
         return '{domain}/{path}'.format(domain=self.DERIVED_DOMAIN_URL, path=self.store_object_path(content_id, key_id))
 
     def store_object_path(self, content_id: str, key_id: str):
-        if self.KEY_STORE_BUCKET_PREFIX is None:
+        if self.KEY_STORE_BUCKET_PREFIX == '':
             return '/'.join([content_id, key_id])
 
         return '/'.join([self.KEY_STORE_BUCKET_PREFIX, content_id, key_id])
